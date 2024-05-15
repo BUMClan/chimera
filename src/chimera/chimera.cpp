@@ -148,10 +148,19 @@ namespace Chimera {
             set_up_remove_exception_dialog();
 
             if(this->feature_present("client")) {
+                
                 // Fix the camo by default
-                extern bool camo_fix_command(int argc, const char **argv);
+                extern bool camo_fix_command(int argc, const char **argv, const char **dart);
+
+                // BUM: Dart
+                const char *value_dart = "false";
+                if(chimera->get_ini()->get_value_bool("bum.allow_dart").value_or(false)) {
+                    value_dart = "true";
+                }
+                
                 const char *value_true = "true";
-                camo_fix_command(1, &value_true);
+                camo_fix_command(1, &value_true, &value_dart);
+
                 add_preframe_event(initial_tick);
 
                 // Fix some more bullshit
