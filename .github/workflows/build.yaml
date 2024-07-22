@@ -54,7 +54,7 @@ jobs:
 
       # Strip symbols from the DLL if building a tagged commit
       - name: "Strip symbols"
-        # if: "startsWith(github.ref, 'refs/tags/')"
+        if: "startsWith(github.ref, 'refs/tags/')"
         run: |-
           i686-w64-mingw32-strip ./build/strings.dll
 
