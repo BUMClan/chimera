@@ -69,7 +69,7 @@ These are features that are always on.
 - [Interpolation](#interpolation)
 - [Limit increase](#limit-increase)
 - [Compressed maps](#compressed-maps)
-- [Campaign in Custom Edition](#campaign-maps)
+- [Campaign in Custom Edition](#campaign-in-custom-edition)
 - [Camera shake fix](#camera-shake-fix)
 - [Checkpoint fix](#checkpoint-fix)
 - [Reduced DRM](#reduced-drm)
@@ -1037,10 +1037,10 @@ set PATH=%~dp0mingw32\bin;%PATH%
 cd build
 cmd /k
 ```
-6. Run `mingw-console.bat`. A console window should open with the correct paths configured to build Chimera. To create a Release build, Run the following commands in the MinGW console window, where `<number of threads>` is the number of CPU threads you would like to use.
+6. Run `mingw-console.bat`. A console window should open with the correct paths configured to build Chimera. To create a Release build, Run the following commands in the MinGW console window.
 ```
-cmake.exe .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
-mingw32-make.exe -j<number of threads>
+cmake.exe .. -G "Ninja" -DCMAKE_BUILD_TYPE=Release
+ninja.exe
 strip.exe strings.dll
 ```
 For the correct DLL version information to be set [Git for Windows](https://gitforwindows.org/) must be installed, but this is not required to compile Chimera.
