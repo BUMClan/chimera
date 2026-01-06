@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include <windows.h>
+#include <versionhelpers.h>
 #include <iostream>
 #include <fstream>
 #include <cstring>
@@ -33,39 +34,42 @@
 #include "master_server/master_server.hpp"
 #include "map_loading/map_loading.hpp"
 #include "map_loading/fast_load.hpp"
+#include "fix/map_hacks/map_hacks.hpp"
 #include "fix/auto_center.hpp"
 #include "fix/abolish_safe_mode.hpp"
 #include "fix/aim_assist.hpp"
+#include "fix/af.hpp"
+#include "fix/bitmap_formats.hpp"
 #include "fix/bullshit_server_data.hpp"
 #include "fix/invalid_command_crash.hpp"
 #include "fix/death_reset_time.hpp"
 #include "fix/descope_fix.hpp"
 #include "fix/extend_limits.hpp"
-#include "fix/flashlight_fix.hpp"
 #include "fix/extended_description_fix.hpp"
 #include "fix/name_fade.hpp"
 #include "fix/camera_shake_fix.hpp"
 #include "fix/checkpoint_fix.hpp"
+#include "fix/chicago_fix.hpp"
 #include "fix/scoreboard_fade_fix.hpp"
 #include "fix/floor_decal_memery.hpp"
 #include "fix/fov_fix.hpp"
 #include "fix/fp_reverb.hpp"
 #include "fix/force_crash.hpp"
 #include "fix/leak_descriptors.hpp"
-#include "fix/nav_numbers.hpp"
 #include "fix/timer_offset.hpp"
 #include "fix/sane_defaults.hpp"
 #include "fix/vehicle_team_desync.hpp"
+#include "fix/weather_fix.hpp"
 #include "fix/uncompressed_sound_fix.hpp"
 #include "fix/video_mode.hpp"
 #include "fix/model_detail.hpp"
+#include "fix/multitexture_overlay_fix.hpp"
 #include "fix/blue_32bit_color_fix.hpp"
 #include "fix/contrail_fix.hpp"
 #include "fix/interpolate/interpolate.hpp"
 #include "fix/sun_fix.hpp"
-#include "fix/flashlight_fix.hpp"
+#include "fix/screen_effect_fix.hpp"
 #include "fix/motion_sensor_fix.hpp"
-#include "fix/inverted_flag.hpp"
 #include "halo_data/object.hpp"
 #include "event/tick.hpp"
 #include "event/map_load.hpp"
@@ -81,6 +85,23 @@
 #include "annoyance/exception_dialog.hpp"
 #include "output/error_box.hpp"
 #include "fix/biped_ui_spawn.hpp"
+#include "fix/z_fighting.hpp"
+#include "fix/water_fix.hpp"
+#include "fix/internal_shaders.hpp"
+#include "fix/xbox_channel_order.hpp"
+#include "fix/fp_animation.hpp"
+#include "fix/alternate_bump_attenuation.hpp"
+#include "fix/specular_memes.hpp"
+#include "fix/glass_fix.hpp"
+#include "fix/hud_bitmap_scale.hpp"
+#include "fix/jason_jones_hacks.hpp"
+#include "fix/pas_crash_fix.hpp"
+#include "rasterizer/rasterizer.hpp"
+#include "rasterizer/shader_transparent_generic.hpp"
+#include "halo_data/game_functions.hpp"
+#include "halo_data/game_variables.hpp"
+#include "fix/hud_meters.hpp"
+#include "fix/gametype_indicator_memes.hpp"
 
 namespace Chimera {
     static Chimera *chimera;
@@ -96,16 +117,6 @@ namespace Chimera {
 
         // If we *can* load Chimera, then do it
         if(find_signatures()) {
-            const char *build_string = *reinterpret_cast<const char **>(this->get_signature("build_string_sig").data() + 1);
-            static const char *expected_version = "01.00.10.0621";
-            if(game_engine() != GAME_ENGINE_DEMO && std::strcmp(build_string, expected_version) != 0) {
-                char error[256] = {};
-                std::snprintf(error, sizeof(error), "Chimera does not support %s. Please use %s.", build_string, expected_version);
-                show_error_box("Error", error);
-                this->p_signatures.clear();
-                return;
-            }
-
             this->get_all_commands();
             initialize_console_hook();
 
@@ -163,10 +174,24 @@ namespace Chimera {
 
                 add_preframe_event(initial_tick);
 
+                // Memes
+                set_up_function_hooks();
+                set_up_game_variables();
+                set_up_map_config_control();
+
+                // For renderer memes
+                set_up_rasterizer();
+
+                // Well it was going to happen eventually.
+                set_up_shader_transparent_generic();
+
                 // Fix some more bullshit
                 set_up_floor_decals_fix();
+                set_up_chicago_fix();
 
-                add_map_load_event(april_fools);
+                if(chimera->get_ini()->get_value_bool("halo.april_fools").value_or(true)) {
+                    add_map_load_event(april_fools);
+                }
 
                 // Set up this hook
                 set_up_rcon_message_hook();
@@ -181,15 +206,43 @@ namespace Chimera {
                 set_up_blue_32bit_color_fix();
                 set_up_contrail_fix();
                 set_up_sun_fix();
+                set_up_screen_effect_fix();
                 set_up_motion_sensor_fix();
-                set_up_flashlight_fix();
-                set_up_inverted_flag_fix();
+                set_up_weather_fix();
+                set_up_multitexture_overlay_fix();
+                set_up_bitmap_formats();
+
+                // This seemed like a good idea at the time...
+                set_up_water_fix();
+                set_up_xbox_channel_order_support();
+                set_up_alternate_bump_attenuation_support();
+                set_up_hud_meters_fix();
+
+                // The games screwed up glass is screwed up.
+                set_up_glass_fix();
+
+                // Fix the borked shader code.
+                set_up_internal_shaders();
+
+                // Gearbox relying on undefined texture sampling behaviour? I'm shocked!
+                set_up_specular_light_fix();
+
+                // Because it's not 2003.
+                set_up_model_af();
+
+                // Fix the transparent decals z-fighting on any PC made in the last decade.
+                set_up_z_fighting_fix();
 
                 // No more updates
                 enable_block_update_check();
 
-                // Make the game use max settings as default because it's not 2003 anymore
-                set_up_sane_defaults();
+                set_up_gametype_indicator_fix();
+
+                // Make the game use max settings as default because it's not 2003 anymore (except when it is)
+                // Defaulting EAX to on is not safe on Windows XP, bad drivers can cause a BSOD.
+                if(IsWindowsVistaOrGreater()) {
+                    set_up_sane_defaults();
+                }
 
                 // Prevent some annoying registry checks that just make the game slower
                 remove_registry_checks();
@@ -226,6 +279,9 @@ namespace Chimera {
 
                 // Fix this broken stuff
                 set_up_auto_center_fix();
+
+                // Fix this I guess
+                set_up_fp_animation_fix();
 
                 // No interpolation in a 2003 PC game? Seriously, Gearbox?
                 set_up_interpolation();
@@ -265,15 +321,21 @@ namespace Chimera {
                 set_up_name_font();
 
                 // lol
-                set_up_nav_numbers_fix();
+                set_up_hud_bitmap_scale_fix();
                 set_up_name_fade_fix();
                 set_up_scoreboard_fade_fix();
+
+                // This is just to get broken shit working.
+                set_up_jason_jones_hacks();
 
                 // More lol
                 set_up_extended_description_fix();
 
                 // wtf
                 set_up_force_crash_fix();
+
+                // Hilarious
+                set_up_sound_pas_crash_fix();
 
                 // Fuck this
                 set_up_abolish_safe_mode();
@@ -399,7 +461,7 @@ namespace Chimera {
             // Get the command name and lowercase it
             std::string command_name = arguments[0];
             for(char &c : command_name) {
-                c = std::tolower(c);
+                c = std::tolower(c, std::locale("C"));
             }
 
             // Remove the command name from the arguments
@@ -604,9 +666,8 @@ namespace Chimera {
                 chimera->execute_command("chimera_fp_reverb true");
                 chimera->execute_command("chimera_throttle_fps 300");
                 chimera->execute_command("chimera_uncap_cinematic true");
-                if(chimera->feature_present("client_af")) {
-                    chimera->execute_command("chimera_af true");
-                }
+                chimera->execute_command("chimera_af true");
+                chimera->execute_command("chimera_model_detail true");
             }
 
             // Also set these fixes
@@ -652,6 +713,9 @@ namespace Chimera {
 
             // Fix the death reset time
             setup_death_reset_time_fix();
+
+            // Set sane defaults in line with the z-fighting fix.
+            set_z_bias_slope();
 
             chimera->reload_config();
         }

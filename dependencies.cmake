@@ -7,13 +7,17 @@ endif()
 
 include(ExternalProject)
 
+# This was once OFF by default, but newer CMake versions changed this to ON.
+# As long as the hashes are the same it does not matter. Needed for some MinGW-w64 releases.
+set(CMAKE_TLS_VERIFY OFF)
+
 set(LOCAL_CURL_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/ext/curl/include)
 set(LOCAL_CURL_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/ext/curl/lib)
 
 ExternalProject_Add(curl
     PREFIX ext/curl
-    URL "https://github.com/curl/curl/releases/download/curl-8_8_0/curl-8.8.0.tar.gz"
-    URL_HASH SHA256=77c0e1cd35ab5b45b659645a93b46d660224d0024f1185e8a95cdb27ae3d787d
+    URL "https://github.com/curl/curl/releases/download/curl-8_17_0/curl-8.17.0.tar.gz"
+    URL_HASH SHA256=e8e74cdeefe5fb78b3ae6e90cd542babf788fa9480029cfcee6fd9ced42b7910
     BUILD_BYPRODUCTS ${LOCAL_CURL_LIB_DIR}/libcurl.a
     CMAKE_ARGS
         -DCMAKE_TOOLCHAIN_FILE:FILEPATH=${CMAKE_TOOLCHAIN_FILE}
@@ -31,6 +35,9 @@ ExternalProject_Add(curl
         -DCURL_ZLIB=OFF
         -DCURL_ZSTD=OFF
         -DHTTP_ONLY=ON
+        -DUSE_NGHTTP2=OFF
+        -DUSE_LIBIDN2=OFF
+        -DCURL_TARGET_WINDOWS_VERSION=${CHIMERA_TARGET_WINDOWS_VERSION}
 )
 
 add_library(local_curl STATIC IMPORTED)
@@ -42,8 +49,8 @@ set(LOCAL_ZSTD_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/ext/zstd/lib)
 
 ExternalProject_Add(zstd
     PREFIX ext/zstd
-    URL "https://github.com/facebook/zstd/releases/download/v1.5.6/zstd-1.5.6.tar.gz"
-    URL_HASH SHA256=8c29e06cf42aacc1eafc4077ae2ec6c6fcb96a626157e0593d5e82a34fd403c1
+    URL "https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz"
+    URL_HASH SHA256=eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3
     BUILD_BYPRODUCTS ${LOCAL_ZSTD_LIB_DIR}/libzstd.a
     SOURCE_SUBDIR build/cmake
     CMAKE_ARGS
@@ -63,3 +70,9 @@ ExternalProject_Add(zstd
 add_library(local_zstd STATIC IMPORTED)
 set_target_properties(local_zstd PROPERTIES IMPORTED_LOCATION ${LOCAL_ZSTD_LIB_DIR}/libzstd.a)
 add_dependencies(local_zstd zstd)
+
+if(${CHIMERA_WINXP})
+    set(LOCAL_CURL_LIBRARIES local_curl ws2_32 bcrypt)
+else()
+    set(LOCAL_CURL_LIBRARIES local_curl ws2_32 bcrypt iphlpapi)
+endif()

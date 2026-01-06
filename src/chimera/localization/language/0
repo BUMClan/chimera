@@ -20,6 +20,7 @@ chimera_error_takes_player_number                                               
 chimera_error_failed_to_open_init                                               Failed to open init file %s
 chimera_error_cannot_download_retail_maps_1                                     Retail Halo PC and HaloMD maps are unsupported by the map downloader.
 chimera_error_cannot_download_retail_maps_2                                     Modify chimera.ini and set \"download_retail_maps\" under \"memory\" to enable.
+chimera_error_cannot_download_invalid_name                                      Map name is invalid.
 
 chimera_tag_map_is_protected                                                    Map is protected (unknown)
 
@@ -66,9 +67,9 @@ chimera_category_server                                                         
 chimera_category_visual                                                         visual
 
 chimera_about_command_credits_header                                            Credits
-chimera_about_command_credits                                                   DEVELOPMENT\n    Aerocatia\n    Cambidd\n    MangoFizz\n    num0005\n    pR0Ps\n    Sledmine\n    Snowy (Chimera lead developer)\n    surrealwaffle\nSPANISH TRANSLATION\n    dr.oldboi\n    MangoFizz\n    MrChromed\n    Rock Candy\nTESTING\n    SteamFox
+chimera_about_command_credits                                                   DEVELOPMENT\n    Aerocatia\n    Cambid\n    MangoFizz\n    num0005\n    pR0Ps\n    Sledmine\n    Snowy (Chimera lead developer)\n    surrealwaffle\nSPANISH TRANSLATION\n    dr.oldboi\n    MangoFizz\n    MrChromed\n    Rock Candy\nTESTING\n    SteamFox
 chimera_about_command_license_header                                            License
-chimera_about_command_license                                                   Copyright (C) 2023 Snowy\n\nThis software is licensed under the GNU General Public License version 3.\nSee https://www.gnu.org/licenses/ for more information.
+chimera_about_command_license                                                   Copyright (C) 2025 Snowy\n\nThis software is licensed under the GNU General Public License version 3.\nSee https://www.gnu.org/licenses/ for more information.
 chimera_about_command_help                                                      List information about this mod.
 chimera_af_command_help                                                         Enable anisotropic filtering.
 chimera_aim_assist_command_help                                                 Enable aim assist.
@@ -77,8 +78,6 @@ chimera_auto_uncrouch_help                                                      
 chimera_block_all_bullshit_help                                                 Disable various things that most people may find annoying.
 chimera_block_auto_center_command_help                                          Set whether auto centering is disabled.
 chimera_block_button_quotes_command_help                                        Set whether or not to remove quotes from button prompts.
-chimera_block_buffering_command_help                                            Disable buffering. May improve mouse input.
-chimera_block_buffering_command_warning                                         Disable Buffering is already enabled (likely via config.txt)!
 chimera_block_camera_shake_command_help                                         Disable camera shaking from damage.
 chimera_block_extra_weapon_blocked                                              Blocked %s
 chimera_block_extra_weapon_error_cannot_get_object                              Failed to read your object (you are dead)
@@ -94,6 +93,7 @@ chimera_block_gametype_indicator_command_help                                   
 chimera_block_gametype_rules_command_help                                       Disable gametype rules at the start of a game.
 chimera_block_hold_f1_command_help                                              Disable the Hold \"F1\" for score prompt.
 chimera_block_loading_screen_command_help                                       Disable loading screen.
+chimera_block_multitexture_overlays_command_help                                Disable multitexture overlays.
 chimera_block_mouse_acceleration_command_help                                   Disable mouse acceleration.
 chimera_block_server_ip_command_help                                            Hide the server IP.
 chimera_block_zoom_blur_command_help                                            Disable scope blur.
@@ -140,7 +140,6 @@ chimera_enable_console_command_warning                                          
 chimera_fix_blue_particles_command_help                                         Fix blue particles appearing in 32-bit maps.
 chimera_fix_contrails_command_help                                              Fix contrail behavior on high frame rates.
 chimera_fix_flashlight_command_help                                             Fix flashlight being too dim.
-chimera_fix_inverted_flags_command_help                                         Fix various shader behavior being inverted.
 chimera_fix_lens_flare_scaling_command_help                                     Fix lens flares not scaling at higher resolutions.
 chimera_fix_motion_sensor_command_help                                          Fix motion sensor behavior on high frame rates.
 

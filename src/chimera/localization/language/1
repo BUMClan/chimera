@@ -48,8 +48,6 @@ chimera_bookmark_list_command_querying                                          
 chimera_history_connect_help                                                    Conéctese al servidor con el índice dado.
 chimera_history_list_command_help                                               Muestra todos los servidores recientes.
 chimera_history_list_command_querying                                           Consultando servidores recientes...
-chimera_block_buffering_command_help                                            Deshabilita el buffering. Puede mejorar la respuesta de entrada del mouse.
-chimera_block_buffering_command_warning                                         ¡La deshabilitación del buffering ya está activada (probablemente a través de config.txt)!
 chimera_block_camera_shake_command_help                                         Deshabilita la sacudida de cámara al recibir daños.
 chimera_block_extra_weapon_blocked                                              %s bloqueada
 chimera_block_extra_weapon_error_cannot_get_object                              No se pudo leer tu objeto (estás muerto)
@@ -65,6 +63,7 @@ chimera_block_gametype_indicator_command_help                                   
 chimera_block_gametype_rules_command_help                                       Deshabilita las reglas del tipo de juego al comienzo de una partida.
 chimera_block_hold_f1_command_help                                              Deshabilita el aviso \"Mantén presionado F1 para puntajes\".
 chimera_block_loading_screen_command_help                                       Deshabilita la pantalla de carga.
+chimera_block_multitexture_overlays_command_help                                Deshabilita superposiciones de múltiples texturas.
 chimera_block_mouse_acceleration_command_help                                   Deshabilita la aceleración de mouse.
 chimera_block_zoom_blur_command_help                                            Desactiva el desenfoque de la mira.
 chimera_command_categories                                                      Categorías:
@@ -97,9 +96,9 @@ chimera_teleport_success_mp                                                     
 chimera_teleport_success_sp                                                     Teletransportado a %f %f %f
 
 chimera_about_command_credits_header                                            Créditos
-chimera_about_command_credits                                                   DESARROLLO\n    Aerocatia\n    Cambidd\n    MangoFizz\n    num0005\n    pR0Ps\n    Sledmine\n    Snowy (Desarrollador líder de Chimera)\n    surrealwaffle\nTRADUCCIÓN AL ESPAÑOL\n    dr.oldboi\n    MangoFizz\n    MrChromed\n    Rock Candy\nTESTEO\n    SteamFox
+chimera_about_command_credits                                                   DESARROLLO\n    Aerocatia\n    Cambid\n    MangoFizz\n    num0005\n    pR0Ps\n    Sledmine\n    Snowy (Desarrollador líder de Chimera)\n    surrealwaffle\nTRADUCCIÓN AL ESPAÑOL\n    dr.oldboi\n    MangoFizz\n    MrChromed\n    Rock Candy\nTESTEO\n    SteamFox
 chimera_about_command_license_header                                            Licencia
-chimera_about_command_license                                                   Copyright (C) 2023 Snowy\n\nEste software está licenciado bajo la \"Licencia Pública General de GNU\", versión 3.\nVisita https://www.gnu.org/licenses/ para mayor información.
+chimera_about_command_license                                                   Copyright (C) 2025 Snowy\n\nEste software está licenciado bajo la \"Licencia Pública General de GNU\", versión 3.\nVisita https://www.gnu.org/licenses/ para mayor información.
 chimera_about_command_help                                                      Lista de información acerca de este mod.
 chimera_aim_assist_command_help                                                 Habilita la asistencia de apuntado.
 chimera_allow_all_passengers_command_help                                       Deshabilita las restricciones de equipo para vehículos.
@@ -174,6 +173,7 @@ chimera_error_takes_player_number                                               
 chimera_error_failed_to_open_init                                               No se pudo abrir el archivo ini %s
 chimera_error_cannot_download_retail_maps_1                                     El descargador de mapas no soporta mapas de Halo PC y Halo MD.
 chimera_error_cannot_download_retail_maps_2                                     Modifica el archivo chimera.ini y establece la opción \"download_retail_maps\" bajo la sección \"memory\" para habilitarla.
+chimera_error_cannot_download_invalid_name                                      El nombre del mapa no es válido.
 chimera_player_list_command_help                                                Muestra a los jugadores del servidor en una lista.
 chimera_player_list_command_none_found                                          No hay jugadores en el servidor.
 chimera_send_chat_message_help                                                  Envía un mensaje por el chat en un canal dado.

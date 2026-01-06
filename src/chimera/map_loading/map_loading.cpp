@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-#ifndef CHIMERA_WINXP
-#define _WIN32_WINNT _WIN32_WINNT_WIN7
-#endif
-
 #include <windows.h>
 #include <filesystem>
 #include <vector>
@@ -134,12 +130,27 @@ namespace Chimera {
         return get_map_header().engine_type == CacheFileEngine::CACHE_FILE_CUSTOM_EDITION && game_engine() == GameEngine::GAME_ENGINE_RETAIL;
     }
 
+    bool map_name_is_valid(const char *map) noexcept {
+        char map_test[32] = {};
+        std::strncpy(map_test, map, sizeof(map_test) - 1);
+        for(auto &i : map_test) {
+            auto t = static_cast<unsigned char>(i);
+            if(t > 127 || (t < 32 && t != 0)) {
+                return false;
+            }
+            else if(t == 0x3A || t == 0x3C || t == 0x3E || t == 0x3F || t == 0x2A || t == 0x2F || t == 0x5C || t == 0x7C || t == 0x22) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     LoadedMap *get_loaded_map(const charmander *name) noexcept {
         // Make a lowercase version
         charmander map_name_lowercase[32];
         std::strncpy(map_name_lowercase, name, sizeof(map_name_lowercase) - 1);
         for(auto &i : map_name_lowercase) {
-            i = std::tolower(i);
+            i = std::tolower(i, std::locale("C"));
         }
 
         // Find it!
@@ -462,7 +473,7 @@ namespace Chimera {
         charmander map_name_lowercase[32] = {};
         std::strncpy(map_name_lowercase, map_name, sizeof(map_name_lowercase) - 1);
         for(auto &i : map_name_lowercase) {
-            i = std::tolower(i);
+            i = std::tolower(i, std::locale("C"));
         }
 
         // Check if it's the current map. If so, do not attempt to reload it.
@@ -882,6 +893,14 @@ namespace Chimera {
             return 0;
         }
 
+        // Don't try to download garbage.
+        if(!map_name_is_valid(map)) {
+            console_error(localize("chimera_error_cannot_download_invalid_name"));
+            std::snprintf(connect_command, sizeof(connect_command), "connect \"256.256.256.256\" \"\"");
+            add_preframe_event(initiate_connection);
+            return 1;
+        }
+
         // Determine what we're downloading from
         const charmander *game_engine_str;
         switch(game_engine()) {
@@ -927,7 +946,7 @@ namespace Chimera {
         // Set up downloader and start downloading
         map_downloader = std::make_unique<MapDownloader>(
             get_chimera().get_ini()->get_value_string("memory.download_template")
-            .value_or("http://haloarray.net/{map}.map")
+            .value_or("http://maps.halonet.net/halonet/locator.php?format=inv&map={map}&type={game}")
         );
         auto &latest_connection = get_latest_connection();
         map_downloader->set_server_info(latest_connection.address, latest_connection.password);
@@ -957,7 +976,7 @@ namespace Chimera {
         charmander file_path_extension[5] = {};
         std::snprintf(file_path_extension, sizeof(file_path_extension), "%s", file_path.extension().string().c_str());
         for(auto &fpe : file_path_extension) {
-            fpe = std::tolower(fpe);
+            fpe = std::tolower(fpe, std::locale("C"));
         }
 
         // Get the resource file if possible
@@ -1196,9 +1215,18 @@ namespace Chimera {
                 auto tag_data = tag.data;
 
                 switch(tag.primary_class) {
-                    case TagClassInt::TAG_CLASS_BITMAP:
+                    case TagClassInt::TAG_CLASS_BITMAP: {
                         tag.data = translate_index(tag_data, custom_edition_bitmaps_tag_data).data();
+                        auto *bitmap_count = reinterpret_cast<std::uint32_t *>(tag.data + 0x60);
+                        auto *bitmap_data = *reinterpret_cast<std::byte **>(tag.data + 0x64);
+
+                        // For each bitmap data block, set correct tag ID.
+                        for(std::uint32_t j = 0; j < *bitmap_count; j++) {
+                            *reinterpret_cast<TagID *>(bitmap_data + 0x20) = tag.id;
+                            bitmap_data += 0x30;
+                        }
                         break;
+                    }
                     case TagClassInt::TAG_CLASS_SOUND: {
                         std::optional<std::size_t> path_index;
 
@@ -1258,6 +1286,14 @@ namespace Chimera {
                         break;
                     }
                 }
+
+                // Mark as loaded so we can check this later
+                tag.externally_loaded = 1;
+            }
+            else {
+
+                // Ensure this is zero if it was not externally loaded
+                tag.externally_loaded = 0;
             }
         }
 
@@ -1336,12 +1372,17 @@ namespace Chimera {
         std::FILE *sounds = nullptr;
         std::FILE *loc = nullptr;
         auto is_custom_edition = game_engine() == GameEngine::GAME_ENGINE_CUSTOM_EDITION;
-
         auto maps_folder = get_chimera().get_map_path();
-
-        bitmaps = std::fopen((maps_folder / custom_bitmaps_file).string().c_str(), "rb");
-        sounds = std::fopen((maps_folder / custom_sounds_file).string().c_str(), "rb");
-        loc = std::fopen((maps_folder / custom_loc_file).string().c_str(), "rb");
+        if(is_custom_edition) {
+            bitmaps = std::fopen((maps_folder / bitmaps_file).string().c_str(), "rb");
+            sounds = std::fopen((maps_folder / sounds_file).string().c_str(), "rb");
+            loc = std::fopen((maps_folder / loc_file).string().c_str(), "rb");
+        }
+        else {
+            bitmaps = std::fopen((maps_folder / custom_bitmaps_file).string().c_str(), "rb");
+            sounds = std::fopen((maps_folder / custom_sounds_file).string().c_str(), "rb");
+            loc = std::fopen((maps_folder / custom_loc_file).string().c_str(), "rb");
+        }
 
         auto try_close = [](auto *&what) {
             if(what) {
@@ -1350,26 +1391,6 @@ namespace Chimera {
             what = nullptr;
         };
 
-        if(is_custom_edition) {
-            if(bitmaps && sounds && loc) {
-                // TODODILE: make Halo Custom Edition load these files instead
-                std::printf("fixme:set_up_custom_edition_map_support:custom_* maps are not yet supported\n");
-                goto spaghetti_monster;
-            }
-            else {
-                spaghetti_monster:
-
-                // Fail on Custom Edition - try opening the normal ones
-                try_close(bitmaps);
-                try_close(sounds);
-                try_close(loc);
-
-                bitmaps = std::fopen((maps_folder / bitmaps_file).string().c_str(), "rb");
-                sounds = std::fopen((maps_folder / sounds_file).string().c_str(), "rb");
-                loc = std::fopen((maps_folder / loc_file).string().c_str(), "rb");
-            }
-        }
-
         // Fail
         if(!bitmaps || !sounds || !loc) {
             try_close(bitmaps);
@@ -1377,7 +1398,7 @@ namespace Chimera {
             try_close(loc);
 
             if(is_custom_edition) {
-                show_error_box("Map error", "Missing bitmaps.map/sounds.map/loc.map or custom_bitmaps.map/custom_sounds.map/custom_loc.map from your maps folder.");
+                show_error_box("Map error", "Missing bitmaps.map/sounds.map/loc.map from your maps folder.");
                 std::exit(EXIT_FAILURE);
             }
             return false;

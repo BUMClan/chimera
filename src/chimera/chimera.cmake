@@ -4,22 +4,17 @@ include(src/chimera/command/command.cmake)
 
 # Include version script
 add_custom_command(
-    OUTPUT src/chimera/version.hpp
-    COMMAND "${CMAKE_COMMAND}" "-DGIT_EXECUTABLE=${GIT_EXECUTABLE}" "-DGIT_DIR=${CMAKE_CURRENT_SOURCE_DIR}/.git" "-DOUT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/src/chimera/version.hpp" -DPROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR} -DPROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR} -DPROJECT_VERSION_PATCH=${PROJECT_VERSION_PATCH} -DIN_GIT_REPO=${IN_GIT_REPO} -P ${CMAKE_CURRENT_SOURCE_DIR}/src/chimera/version.cmake
-    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/.git/refs/heads/${CHIMERA_GIT_BRANCH}"
-    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/chimera/version.cmake"
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/version.hpp"
+    COMMAND "${CMAKE_COMMAND}" "-DGIT_EXECUTABLE=${GIT_EXECUTABLE}" "-DGIT_DIR=${CMAKE_CURRENT_SOURCE_DIR}/.git" "-DOUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/version.hpp" -DPROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR} -DPROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR} -DPROJECT_VERSION_PATCH=${PROJECT_VERSION_PATCH} -DIN_GIT_REPO=${IN_GIT_REPO} -P "${CMAKE_CURRENT_SOURCE_DIR}/src/chimera/version.cmake"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/chimera/version.cmake" "$<$<BOOL:${IN_GIT_REPO}>:${CMAKE_CURRENT_SOURCE_DIR}/.git/refs/heads>"
 )
 
 # Make chimera-version
 add_custom_target(chimera-version
-    SOURCES src/chimera/version.hpp
+    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/version.hpp"
 )
 
-# Windows XP
-option(CHIMERA_WINXP "Enable support for Windows XP (increases binary size)" OFF)
 if(${CHIMERA_WINXP})
-    add_definitions(-DCHIMERA_WINXP)
-
     set(WINXP_COMPATIBILITY_FILES
         src/chimera/map_loading/get_file_name_from_handle.c
     )
@@ -27,12 +22,20 @@ if(${CHIMERA_WINXP})
     set(WINXP_COMPATIBILITY_LIBRARIES
         psapi
     )
+
+    set(D3DCOMPILER_LIBRARY
+        d3dcompiler_43
+    )
 else()
     set(WINXP_COMPATIBILITY_FILES
 
     )
     set(WINXP_COMPATIBILITY_LIBRARIES
 
+    )
+
+    set(D3DCOMPILER_LIBRARY
+        d3dcompiler
     )
 endif()
 
@@ -74,6 +77,7 @@ add_library(chimera STATIC
     src/chimera/event/damage.cpp
     src/chimera/event/damage.S
     src/chimera/event/frame.cpp
+    src/chimera/event/game_loop.cpp
     src/chimera/event/map_load.cpp
     src/chimera/event/revert.cpp
     src/chimera/event/rcon_message.cpp
@@ -83,9 +87,14 @@ add_library(chimera STATIC
     src/chimera/map_loading/fast_load.S
     src/chimera/map_loading/laa.cpp
     src/chimera/fix/abolish_safe_mode.cpp
+    src/chimera/fix/alternate_bump_attenuation.cpp
+    src/chimera/fix/alternate_bump_attenuation.S
     src/chimera/fix/aim_assist.cpp
     src/chimera/fix/aim_assist.S
+    src/chimera/fix/af.cpp
+    src/chimera/fix/af.S
     src/chimera/fix/auto_center.cpp
+    src/chimera/fix/bitmap_formats.cpp
     src/chimera/fix/blue_32bit_color_fix.cpp
     src/chimera/fix/bullshit_server_data.cpp
     src/chimera/fix/bullshit_server_data.S
@@ -93,26 +102,34 @@ add_library(chimera STATIC
     src/chimera/fix/camera_shake_fix.S
     src/chimera/fix/checkpoint_fix.cpp
     src/chimera/fix/checkpoint_fix.S
+    src/chimera/fix/chicago_fix.cpp
+    src/chimera/fix/chicago_fix.S
     src/chimera/fix/contrail_fix.cpp
     src/chimera/fix/contrail_fix.S
     src/chimera/fix/custom_map_lobby_fix.cpp
     src/chimera/fix/death_reset_time.cpp
+    src/chimera/fix/z_fighting.cpp
+    src/chimera/fix/z_fighting.S
     src/chimera/fix/descope_fix.cpp
     src/chimera/fix/extend_limits.cpp
     src/chimera/fix/extend_limits.S
     src/chimera/fix/extended_description_fix.cpp
-    src/chimera/fix/flashlight_fix.cpp
-    src/chimera/fix/flashlight_fix.S
+    src/chimera/fix/map_hacks/map_hacks.cpp
     src/chimera/fix/floor_decal_memery.cpp
     src/chimera/fix/floor_decal_memery.S
     src/chimera/fix/force_crash.cpp
+    src/chimera/fix/fp_animation.cpp
     src/chimera/fix/fp_reverb.cpp
     src/chimera/fix/fp_reverb.S
     src/chimera/fix/fov_fix.cpp
+    src/chimera/fix/gametype_indicator_memes.cpp
+    src/chimera/fix/gametype_indicator_memes.S
+    src/chimera/fix/hud_bitmap_scale.cpp
+    src/chimera/fix/hud_bitmap_scale.S
+    src/chimera/fix/hud_meters.cpp
+    src/chimera/fix/hud_meters.S
     src/chimera/fix/invalid_command_crash.cpp
     src/chimera/fix/invalid_command_crash.S
-    src/chimera/fix/inverted_flag.cpp
-    src/chimera/fix/inverted_flag.S
     src/chimera/fix/interpolate/antenna.cpp
     src/chimera/fix/interpolate/camera.cpp
     src/chimera/fix/interpolate/flag.cpp
@@ -121,18 +138,30 @@ add_library(chimera STATIC
     src/chimera/fix/interpolate/light.cpp
     src/chimera/fix/interpolate/object.cpp
     src/chimera/fix/interpolate/particle.cpp
+    src/chimera/fix/jason_jones_hacks.cpp
     src/chimera/fix/leak_descriptors.cpp
     src/chimera/fix/model_detail.cpp
     src/chimera/fix/model_detail.S
     src/chimera/fix/motion_sensor_fix.cpp
     src/chimera/fix/motion_sensor_fix.S
+    src/chimera/fix/multitexture_overlay_fix.cpp
+    src/chimera/fix/multitexture_overlay_fix.S
     src/chimera/fix/name_fade.cpp
     src/chimera/fix/name_fade.S
-    src/chimera/fix/nav_numbers.cpp
+    src/chimera/fix/pas_crash_fix.cpp
+    src/chimera/fix/pas_crash_fix.S
+    src/chimera/fix/glass_fix.cpp
+    src/chimera/fix/glass_fix.S
+    src/chimera/fix/internal_shaders.cpp
+    src/chimera/fix/internal_shaders.S
     src/chimera/fix/sane_defaults.cpp
     src/chimera/fix/sane_defaults.S
     src/chimera/fix/scoreboard_fade_fix.cpp
     src/chimera/fix/scoreboard_fade_fix.S
+    src/chimera/fix/screen_effect_fix.cpp
+    src/chimera/fix/screen_effect_fix.S
+    src/chimera/fix/specular_memes.cpp
+    src/chimera/fix/specular_memes.S
     src/chimera/fix/sun_fix.cpp
     src/chimera/fix/timer_offset.cpp
     src/chimera/fix/uncompressed_sound_fix.cpp
@@ -140,27 +169,38 @@ add_library(chimera STATIC
     src/chimera/fix/vehicle_team_desync.S
     src/chimera/fix/video_mode.cpp
     src/chimera/fix/video_mode.S
+    src/chimera/fix/water_fix.cpp
+    src/chimera/fix/water_fix.S
     src/chimera/fix/weapon_swap_ticks.cpp
     src/chimera/fix/weapon_swap_ticks.S
+    src/chimera/fix/weather_fix.cpp
+    src/chimera/fix/weather_fix.S
     src/chimera/fix/widescreen_element_reposition_hud.S
     src/chimera/fix/widescreen_element_reposition_letterbox.S
     src/chimera/fix/widescreen_element_reposition_menu.S
     src/chimera/fix/widescreen_element_reposition_menu_text.S
     src/chimera/fix/widescreen_fix.cpp
     src/chimera/fix/widescreen_mouse.S
+    src/chimera/fix/xbox_channel_order.cpp
+    src/chimera/fix/xbox_channel_order.S
     src/chimera/fix/biped_ui_spawn.cpp
     src/chimera/halo_data/antenna.cpp
+    src/chimera/halo_data/bitmaps.cpp
     src/chimera/halo_data/camera.cpp
     src/chimera/halo_data/chat.cpp
     src/chimera/halo_data/chat.S
     src/chimera/halo_data/contrail.cpp
     src/chimera/halo_data/controls.cpp
+    src/chimera/halo_data/cutscene.cpp
     src/chimera/halo_data/damage.cpp
     src/chimera/halo_data/damage.S
     src/chimera/halo_data/decal.cpp
     src/chimera/halo_data/effect.cpp
     src/chimera/halo_data/flag.cpp
     src/chimera/halo_data/game_engine.cpp
+    src/chimera/halo_data/game_functions.cpp
+    src/chimera/halo_data/game_functions.S
+    src/chimera/halo_data/game_variables.cpp
     src/chimera/halo_data/globals.cpp
     src/chimera/halo_data/hud_fonts.cpp
     src/chimera/halo_data/hud_fonts.S
@@ -205,6 +245,11 @@ add_library(chimera STATIC
     src/chimera/output/error_box.cpp
     src/chimera/output/output.cpp
     src/chimera/output/output.S
+    src/chimera/rasterizer/shader_transparent_generic.cpp
+    src/chimera/rasterizer/shader_transparent_generic.S
+    src/chimera/rasterizer/rasterizer_transparent_geometry.cpp
+    src/chimera/rasterizer/rasterizer.cpp
+    src/chimera/rasterizer/rasterizer_vertex_shaders.cpp
     src/chimera/signature/hook.cpp
     src/chimera/signature/signature.cpp
     src/chimera/signature/hac/codefinder.cpp
@@ -213,6 +258,12 @@ add_library(chimera STATIC
 
     ${CMAKE_CURRENT_BINARY_DIR}/localization_strings.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/color_codes.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/vertex_shaders.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/pixel_shaders.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/d3dx_effects.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/effects_collection.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/shader_transparent_generic_blobs.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/map_hacks_config.cpp
 )
 add_dependencies(chimera chimera-version local_curl local_zstd)
 
@@ -231,6 +282,25 @@ add_custom_command(
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/chimera/output/color_codes
 )
 
+file(GLOB CHIMERA_SHADER_DEPS "${CMAKE_CURRENT_SOURCE_DIR}/src/chimera/halo_data/shaders/*")
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/vertex_shaders.cpp" "${CMAKE_CURRENT_BINARY_DIR}/pixel_shaders.cpp" "${CMAKE_CURRENT_BINARY_DIR}/d3dx_effects.cpp" "${CMAKE_CURRENT_BINARY_DIR}/effects_collection.cpp"
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/src/chimera/halo_data/shaders/generate_shader_blobs.py ${CMAKE_CURRENT_SOURCE_DIR}/src/chimera/halo_data/shaders/ ${CMAKE_CURRENT_BINARY_DIR}/
+    DEPENDS ${CHIMERA_SHADER_DEPS}
+)
+
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/shader_transparent_generic_blobs.cpp"
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/src/chimera/halo_data/shaders/generate_shader_transparent_generic_blobs.py ${CMAKE_CURRENT_SOURCE_DIR}/src/chimera/halo_data/shaders/ ${CMAKE_CURRENT_BINARY_DIR}/
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/chimera/halo_data/shaders/pixel/generic_hashes.txt
+)
+
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/map_hacks_config.cpp"
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/src/chimera/fix/map_hacks/map_hacks_config_generate.py ${CMAKE_CURRENT_SOURCE_DIR}/src/chimera/fix/map_hacks/ ${CMAKE_CURRENT_BINARY_DIR}/
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/chimera/fix/map_hacks/map_hacks_config.json
+)
+
 target_include_directories(chimera
     PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
     PRIVATE ${LOCAL_CURL_INCLUDE_DIR}
@@ -239,7 +309,7 @@ target_include_directories(chimera
 )
 
 # Set the name
-target_link_libraries(chimera shlwapi map_downloader lua local_curl ws2_32 bcrypt local_zstd)
+target_link_libraries(chimera ${D3DCOMPILER_LIBRARY} shlwapi blake3 map_downloader lua ${LOCAL_CURL_LIBRARIES} local_zstd)
 
 # This one isn't worth fixing
 set_source_files_properties(src/chimera/signature/hac/codefinder.cpp PROPERTIES COMPILE_FLAGS "-Wno-old-style-cast")
